@@ -5,13 +5,12 @@ dotenv.config({ path: '.env.local', quiet: true, override: false });
 
 const ARUNACORE_HOST = process.env.ARUNACORE_HOST || 'localhost';
 const ARUNACORE_PORT = Number(process.env.ARUNACORE_PORT) || 3000;
-const ARUNACORE_ID = process.env.ARUNACORE_ID || 'aps-final-geo-service';
 
 const GEO_API_KEY = process.env.GEO_API_KEY || '';
 const BASE_GEO_API_URL = process.env.BASE_GEO_API_URL || 'https://api.example.com/geo';
 
 const arunaCore = new ArunaClient({
-  id: ARUNACORE_ID,
+  id: 'aps-final-geo-service',
   host: ARUNACORE_HOST,
   port: ARUNACORE_PORT,
 });

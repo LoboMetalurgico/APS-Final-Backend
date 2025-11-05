@@ -8,10 +8,9 @@ const PORT = Number(process.env.SERVER_PORT) || 3010;
 const HOST = process.env.SERVER_IP || 'localhost';
 const ARUNACORE_HOST = process.env.ARUNACORE_HOST || 'localhost';
 const ARUNACORE_PORT = Number(process.env.ARUNACORE_PORT) || 3000;
-const ARUNACORE_ID = process.env.ARUNACORE_ID || 'aps-final-gateway';
 
 const arunaCore = new ArunaClient({
-  id: ARUNACORE_ID,
+  id: 'aps-final-gateway',
   host: ARUNACORE_HOST,
   port: ARUNACORE_PORT,
 });
@@ -47,7 +46,13 @@ app.get('/health', (req, res) => {
 
 app.get('/city', async (req, res) => {
   const city: string | undefined = req.query.city as string | undefined;
-  const coords: string | undefined = req.query.coords as string | undefined;
+  const lat: string | undefined = req.query.lat as string | undefined;
+  const lon: string | undefined = req.query.lon as string | undefined;
+
+  let coords: { lat: number; lon: number } | undefined = undefined;
+  if (lat && lon) {
+    coords = { lat: Number(lat), lon: Number(lon) };
+  }
   
   if (!city && !coords) {
     return res.status(400).json({ error: 'Parâmetros inválidos. Forneça "city" ou "coords".' });
@@ -55,7 +60,7 @@ app.get('/city', async (req, res) => {
 
   const data = await arunaCore.request({
     action: 'getCityInfo',
-    data: city ? { city } : { coords: JSON.parse(coords!) },
+    data: city ? { city } : { coords },
   }, { target: { id: 'aps-final-geo-service' } }).then((response: any) => {
     return response;
   });
