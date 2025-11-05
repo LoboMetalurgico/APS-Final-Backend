@@ -1,0 +1,11 @@
+name: aps-final-containers
+services:
+  arunacore:
+    image: lobometalurgico/arunacore:latest-alpine
+    restart: unless-stopped
+    environment:
+      - ARUNACORE_MASTERKEY=key
+      - ARUNACORE_REQUIRE_AUTH=false
+      - ARUNACORE_ID=arunacore-aps-final
+    ports:
+      - "2000:3000"
