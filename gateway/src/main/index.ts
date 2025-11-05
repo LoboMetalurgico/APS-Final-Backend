@@ -22,17 +22,19 @@ interface CityData {
   city: string;
   temperature: number;
   humidity: number;
-  uvIndex: number;
-  condition: '☀️ Ensolarado' | '🌧️ Chuvoso' | '☁️ Nublado' |'🌫️ Neblina';
+  condition: string;
   windSpeed: number;
   windDirection: 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' |'NW';
   airQuality: {
-    'pm2_5': number;
-    'pm10': number;
-    'o3': number;
-    'no2': number;
-    'so2': number;
-    'co': number;
+    index: number;
+    description: string;
+    mainPollutant: string;
+    category: 'Boa' | 'Moderada' | 'Ruim' | 'Muito Ruim' | 'Péssima';
+  }
+  uvData: {
+    uvi: number;
+    level: 'Baixo' | 'Moderado' | 'Alto' | 'Muito Alto' | 'Extremo';
+    description: string;
   }
 }
 
@@ -76,13 +78,13 @@ app.get('/location', async (req, res) => {
   return res.json(content.data);
 });
 
-app.get('/fetchLocationData', async (req, res) => {
+app.get('/locationData', async (req, res) => {
   const { lat, lon } = req.query;
   if ((!lat || !lon) || (isNaN(Number(lat)) || isNaN(Number(lon)))) {
-    return res.status(400).json({ error: 'Parâmetros inválidos. Forneça "lat" e "lon".' });
+    return res.status(400).json({ error: 'Parâmetros inválidos. Forneça \'lat\' e \'lon\'.' });
   }
 
-  const weatherData = await arunaCore.request({
+  const weatherData = arunaCore.request({
     action: 'getWeatherInfo',
     data: {
       coords: {
@@ -92,17 +94,59 @@ app.get('/fetchLocationData', async (req, res) => {
     },
   }, { target: { id: 'aps-final-weather-service' } });
 
-  const content = weatherData.content as { error?: string, data: any } | undefined;
+  const weatherMetrics = arunaCore.request({
+    action: 'getWeatherMetrics',
+    data: {
+      coords: {
+        lat: Number(lat),
+        lon: Number(lon),
+      },
+    },
+  }, { target: { id: 'aps-final-weather-metrics-service' } });
 
-  if (content && content.error) {
-    return res.status(500).json({ error: content.error });
+  const [weatherDataResolved, weatherMetricsResolved] = await Promise.all([weatherData, weatherMetrics]);
+
+  const weatherMetricsContent = weatherMetricsResolved.content as { error?: string, data: any } | undefined;
+
+  if (weatherMetricsContent && weatherMetricsContent.error) {
+    return res.status(500).json({ error: weatherMetricsContent.error });
   }
 
-  if (!content || content.data == null) {
+  if (!weatherMetricsContent || weatherMetricsContent.data == null) {
+    return res.status(404).json({ error: 'Dados métricos não encontrados.' });
+  }
+
+  const weatherContent = weatherDataResolved.content as { error?: string, data: any } | undefined;
+
+  if (weatherContent && weatherContent.error) {
+    return res.status(500).json({ error: weatherContent.error });
+  }
+
+  if (!weatherContent || weatherContent.data == null) {
     return res.status(404).json({ error: 'Dados meteorológicos não encontrados.' });
   }
 
-  return res.json(content.data);
+  const cityData: CityData = {
+    city: weatherContent.data.name,
+    temperature: weatherContent.data.temperature,
+    humidity: weatherContent.data.humidity,
+    condition: weatherContent.data.condition,
+    windSpeed: weatherContent.data.windSpeed,
+    windDirection: weatherContent.data.windDirection,
+    airQuality: {
+      index: weatherMetricsContent.data.iqAr.index,
+      description: weatherMetricsContent.data.iqAr.description,
+      mainPollutant: weatherMetricsContent.data.iqAr.mainPollutant,
+      category: weatherMetricsContent.data.iqAr.category,
+    },
+    uvData: {
+      uvi: weatherMetricsContent.data.uvData.uvi,
+      level: weatherMetricsContent.data.uvData.level,
+      description: weatherMetricsContent.data.uvData.description,
+    },
+  };
+
+  return res.json(cityData);
 });
 
 arunaCore.connect().then(() => {

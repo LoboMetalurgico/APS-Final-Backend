@@ -1,5 +1,6 @@
 import { ArunaClient, IMessage } from 'arunacore-api';
 import { WeatherApiResponse } from './types';
+import { degToCompass } from './utils';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local', quiet: true, override: false });
@@ -46,7 +47,7 @@ arunaCore.on('request', async (message: IMessage) => {
       humidity: weatherInfo.main.humidity,
       condition: weatherInfo.weather[0].main,
       windSpeed: weatherInfo.wind.speed,
-      windDirection: weatherInfo.wind.deg,
+      windDirection: degToCompass(weatherInfo.wind.deg),
     };
 
     await message.reply!({ data: parsedWeatherInfo });
