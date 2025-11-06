@@ -20,7 +20,8 @@ const arunaCore = new ArunaClient({
 interface RequestWeatherInfo {
   action: 'getWeatherInfo';
   data: {
-    coords: {
+    location?: string;
+    coords?: {
       lat: number;
       lon: number;
     };
@@ -31,10 +32,21 @@ arunaCore.on('request', async (message: IMessage) => {
   if ((message.content as RequestWeatherInfo).action !== 'getWeatherInfo') return;
   const requestData = (message.content as RequestWeatherInfo).data;
 
+  if (!requestData.location && !requestData.coords) {
+    await message.reply!({ error: 'Parâmetro location ou coords é obrigatório.' });
+    return;
+  }
+
   try {
-    const queryParam = `lat=${encodeURIComponent(requestData.coords.lat)}&lon=${encodeURIComponent(requestData.coords.lon)}`;
+    const queryParam = requestData.location
+      ? `q=${encodeURIComponent(requestData.location)},br`
+      : `lat=${encodeURIComponent(requestData.coords!.lat)}&lon=${encodeURIComponent(requestData.coords!.lon)}`;
     const response = await fetch(`${BASE_WEATHER_API_URL}/weather?${queryParam}&appid=${WEATHER_API_KEY}&units=metric`);
     if (!response.ok) {
+      if (response.status === 404) {
+        await message.reply!({ data: null });
+        return;
+      }
       await message.reply!({ error: 'Erro ao buscar informações do clima.' });
       console.error('Erro na resposta da API:', response);
       return;
@@ -43,6 +55,10 @@ arunaCore.on('request', async (message: IMessage) => {
 
     const parsedWeatherInfo = {
       name: weatherInfo.name,
+      coords: {
+        lat: weatherInfo.coord.lat,
+        lon: weatherInfo.coord.lon,
+      },
       temperature: weatherInfo.main.temp,
       humidity: weatherInfo.main.humidity,
       condition: weatherInfo.weather[0].main,

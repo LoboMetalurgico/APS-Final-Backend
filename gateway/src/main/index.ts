@@ -19,7 +19,7 @@ const app = express();
 app.use(express.json());
 
 interface CityData {
-  city: string;
+  location: string;
   temperature: number;
   humidity: number;
   condition: string;
@@ -47,9 +47,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/location', async (req, res) => {
-  const location: string | undefined = req.query.location as string | undefined;
-  const lat: string | undefined = req.query.lat as string | undefined;
-  const lon: string | undefined = req.query.lon as string | undefined;
+  const { lat, lon, location } = req.query;
 
   let coords: { lat: number; lon: number } | undefined = undefined;
   if (lat && lon) {
@@ -79,44 +77,23 @@ app.get('/location', async (req, res) => {
 });
 
 app.get('/locationData', async (req, res) => {
-  const { lat, lon } = req.query;
-  if ((!lat || !lon) || (isNaN(Number(lat)) || isNaN(Number(lon)))) {
-    return res.status(400).json({ error: 'Parâmetros inválidos. Forneça \'lat\' e \'lon\'.' });
+  const { lat, lon, location } = req.query;
+
+  let coords: { lat: number; lon: number } | undefined = undefined;
+  if (lat && lon) {
+    coords = { lat: Number(lat), lon: Number(lon) };
+  }
+  
+  if (!location && !coords) {
+    return res.status(400).json({ error: 'Parâmetros inválidos. Forneça \'location\' ou \'lat\' e \'lon\'.' });
   }
 
-  const weatherData = arunaCore.request({
+  const weatherData = await arunaCore.request({
     action: 'getWeatherInfo',
-    data: {
-      coords: {
-        lat: Number(lat),
-        lon: Number(lon),
-      },
-    },
+    data: location ? { location } : { coords },
   }, { target: { id: 'aps-final-weather-service' } });
 
-  const weatherMetrics = arunaCore.request({
-    action: 'getWeatherMetrics',
-    data: {
-      coords: {
-        lat: Number(lat),
-        lon: Number(lon),
-      },
-    },
-  }, { target: { id: 'aps-final-weather-metrics-service' } });
-
-  const [weatherDataResolved, weatherMetricsResolved] = await Promise.all([weatherData, weatherMetrics]);
-
-  const weatherMetricsContent = weatherMetricsResolved.content as { error?: string, data: any } | undefined;
-
-  if (weatherMetricsContent && weatherMetricsContent.error) {
-    return res.status(500).json({ error: weatherMetricsContent.error });
-  }
-
-  if (!weatherMetricsContent || weatherMetricsContent.data == null) {
-    return res.status(404).json({ error: 'Dados métricos não encontrados.' });
-  }
-
-  const weatherContent = weatherDataResolved.content as { error?: string, data: any } | undefined;
+  const weatherContent = weatherData.content as { error?: string, data: any } | undefined;
 
   if (weatherContent && weatherContent.error) {
     return res.status(500).json({ error: weatherContent.error });
@@ -126,8 +103,25 @@ app.get('/locationData', async (req, res) => {
     return res.status(404).json({ error: 'Dados meteorológicos não encontrados.' });
   }
 
+  const weatherMetrics = await arunaCore.request({
+    action: 'getWeatherMetrics',
+    data: {
+      coords: weatherContent.data.coords
+    },
+  }, { target: { id: 'aps-final-weather-metrics-service' } });
+
+  const weatherMetricsContent = weatherMetrics.content as { error?: string, data: any } | undefined;
+
+  if (weatherMetricsContent && weatherMetricsContent.error) {
+    return res.status(500).json({ error: weatherMetricsContent.error });
+  }
+
+  if (!weatherMetricsContent || weatherMetricsContent.data == null) {
+    return res.status(404).json({ error: 'Dados métricos não encontrados.' });
+  }
+
   const cityData: CityData = {
-    city: weatherContent.data.name,
+    location: weatherContent.data.name,
     temperature: weatherContent.data.temperature,
     humidity: weatherContent.data.humidity,
     condition: weatherContent.data.condition,
@@ -136,7 +130,7 @@ app.get('/locationData', async (req, res) => {
     airQuality: {
       index: weatherMetricsContent.data.iqAr.index,
       description: weatherMetricsContent.data.iqAr.description,
-      mainPollutant: weatherMetricsContent.data.iqAr.mainPollutant,
+      mainPollutant: weatherMetricsContent.data.iqAr.mainPollutant.replace('_', '.'),
       category: weatherMetricsContent.data.iqAr.category,
     },
     uvData: {
