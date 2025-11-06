@@ -1,7 +1,7 @@
 import { ArunaClient, IMessage } from 'arunacore-api';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local', quiet: true, override: false });
+dotenv.config({ path: '.env.local', quiet: true, override: true });
 
 const ARUNACORE_HOST = process.env.ARUNACORE_HOST || 'localhost';
 const ARUNACORE_PORT = Number(process.env.ARUNACORE_PORT) || 3000;

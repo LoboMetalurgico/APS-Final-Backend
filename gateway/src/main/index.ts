@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { ArunaClient } from 'arunacore-api';
 
-dotenv.config({ path: '.env.local', quiet: true, override: false });
+dotenv.config({ path: '.env.local', quiet: true, override: true });
 
 const PORT = Number(process.env.SERVER_PORT) || 3010;
 const HOST = process.env.SERVER_IP || 'localhost';
