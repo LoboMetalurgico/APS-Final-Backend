@@ -17,8 +17,7 @@
     "@promisepending/logger.js": "^2.0.0-alpha.1",
     "arunacore-api": "^1.0.0-BETA.5",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "ws": "^8.18.0"
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",
