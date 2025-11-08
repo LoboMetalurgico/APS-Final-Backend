@@ -1,6 +1,7 @@
+import { ArunaClient } from 'arunacore-api';
+import { ICityData } from './ICityData';
 import express from 'express';
 import dotenv from 'dotenv';
-import { ArunaClient } from 'arunacore-api';
 
 dotenv.config({ path: '.env.local', quiet: true, override: true });
 
@@ -17,26 +18,6 @@ const arunaCore = new ArunaClient({
 
 const app = express();
 app.use(express.json());
-
-interface CityData {
-  location: string;
-  temperature: number;
-  humidity: number;
-  condition: string;
-  windSpeed: number;
-  windDirection: 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' |'NW';
-  airQuality: {
-    index: number;
-    description: string;
-    mainPollutant: string;
-    category: 'Boa' | 'Moderada' | 'Ruim' | 'Muito Ruim' | 'Péssima';
-  }
-  uvData: {
-    uvi: number;
-    level: 'Baixo' | 'Moderado' | 'Alto' | 'Muito Alto' | 'Extremo';
-    description: string;
-  }
-}
 
 app.get('/', (req, res) => {
   res.sendStatus(401);
@@ -120,7 +101,7 @@ app.get('/locationData', async (req, res) => {
     return res.status(404).json({ error: 'Dados métricos não encontrados.' });
   }
 
-  const cityData: CityData = {
+  const cityData: ICityData = {
     location: weatherContent.data.name,
     temperature: weatherContent.data.temperature,
     humidity: weatherContent.data.humidity,

@@ -1,7 +1,6 @@
+import { IAirQualityApiResponse, IRequestWeatherMetrics } from './types';
+import { calculateIQAr, descIQAr, getUVIndex } from './utils';
 import { ArunaClient, IMessage } from 'arunacore-api';
-import { AirQualityApiResponse } from './types';
-import { calculateIQAr, descIQAr } from './utils/iqar';
-import { getUVIndex } from './utils/uvindex';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local', quiet: true, override: true });
@@ -18,15 +17,8 @@ const arunaCore = new ArunaClient({
   port: ARUNACORE_PORT,
 });
 
-interface RequestWeatherMetrics {
-  action: 'getWeatherMetrics';
-  data: {
-    coords: { lat: number; lon: number };
-  };
-}
-
 arunaCore.on('request', async (message: IMessage) => {
-  const content = message.content as RequestWeatherMetrics;
+  const content = message.content as IRequestWeatherMetrics;
   if (content.action !== 'getWeatherMetrics') return;
 
   try {
@@ -43,7 +35,7 @@ arunaCore.on('request', async (message: IMessage) => {
       return;
     }
 
-    const weatherInfo: AirQualityApiResponse = await response.json();
+    const weatherInfo: IAirQualityApiResponse = await response.json();
     if (!weatherInfo.list?.length) {
       await message.reply!({ error: 'Nenhum dado de qualidade do ar encontrado.' });
       return;

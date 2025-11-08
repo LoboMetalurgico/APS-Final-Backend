@@ -24,7 +24,7 @@ export interface AirQualityItem {
   dt: number;
 }
 
-export interface AirQualityApiResponse {
+export interface IAirQualityApiResponse {
   coord: AirQualityCoord;
   list: AirQualityItem[];
 }

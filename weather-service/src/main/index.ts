@@ -1,5 +1,5 @@
+import { IRequestWeatherInfo, IWeatherApiResponse } from './types';
 import { ArunaClient, IMessage } from 'arunacore-api';
-import { WeatherApiResponse } from './types';
 import { degToCompass } from './utils';
 import dotenv from 'dotenv';
 
@@ -17,20 +17,9 @@ const arunaCore = new ArunaClient({
   port: ARUNACORE_PORT,
 });
 
-interface RequestWeatherInfo {
-  action: 'getWeatherInfo';
-  data: {
-    location?: string;
-    coords?: {
-      lat: number;
-      lon: number;
-    };
-  };
-}
-
 arunaCore.on('request', async (message: IMessage) => {
-  if ((message.content as RequestWeatherInfo).action !== 'getWeatherInfo') return;
-  const requestData = (message.content as RequestWeatherInfo).data;
+  if ((message.content as IRequestWeatherInfo).action !== 'getWeatherInfo') return;
+  const requestData = (message.content as IRequestWeatherInfo).data;
 
   if (!requestData.location && !requestData.coords) {
     await message.reply!({ error: 'Parâmetro location ou coords é obrigatório.' });
@@ -51,7 +40,7 @@ arunaCore.on('request', async (message: IMessage) => {
       console.error('Erro na resposta da API:', response);
       return;
     }
-    const weatherInfo: WeatherApiResponse = await response.json();
+    const weatherInfo: IWeatherApiResponse = await response.json();
 
     const parsedWeatherInfo = {
       name: weatherInfo.name,

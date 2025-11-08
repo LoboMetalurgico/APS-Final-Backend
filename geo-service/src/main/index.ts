@@ -1,3 +1,4 @@
+import { ICityInfoAPIResponse, IRequestCityInfo } from './types';
 import { ArunaClient, IMessage } from 'arunacore-api';
 import dotenv from 'dotenv';
 
@@ -15,30 +16,10 @@ const arunaCore = new ArunaClient({
   port: ARUNACORE_PORT,
 });
 
-interface RequestCityInfo {
-  action: 'getCityInfo';
-  data: {
-    location?: string;
-    coords?: {
-      lat: number;
-      lon: number;
-    };
-  };
-}
-
-interface CityInfoAPIResponse {
-  name: string;
-  local_names?: { [key: string]: string };
-  lat: number;
-  lon: number;
-  country: string;
-  state?: string;
-}
-
 arunaCore.on('request', async (message: IMessage) => {
-  if ((message.content as RequestCityInfo).action !== 'getCityInfo') return;
+  if ((message.content as IRequestCityInfo).action !== 'getCityInfo') return;
 
-  const requestData = (message.content as RequestCityInfo).data;
+  const requestData = (message.content as IRequestCityInfo).data;
   if (!requestData.location && !requestData.coords) {
     await message.reply!({ error: 'Parâmetro location ou coords é obrigatório.' });
     return;
@@ -54,7 +35,7 @@ arunaCore.on('request', async (message: IMessage) => {
       console.error('Erro na resposta da API:', response);
       return;
     }
-    let cityInfo: CityInfoAPIResponse = await response.json();
+    let cityInfo: ICityInfoAPIResponse = await response.json();
 
     if (!cityInfo || (Array.isArray(cityInfo) && cityInfo.length === 0)) {
       await message.reply!({ data: null });

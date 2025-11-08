@@ -44,7 +44,7 @@ export interface SysInfo {
   sunset: number;
 }
 
-export interface WeatherApiResponse {
+export interface IWeatherApiResponse {
   coord: Coord;
   weather: WeatherItem[];
   base: string;
