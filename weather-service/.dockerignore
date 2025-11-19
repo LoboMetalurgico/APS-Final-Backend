@@ -1,0 +1,42 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build
+build
+dist
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+*.test.ts
+*.spec.ts
+src/tests
+
+# Misc
+README.md
+.eslintrc*
+eslint.config.mjs
+.prettierrc
+tsconfig.json
+*.md

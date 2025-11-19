@@ -1,0 +1,97 @@
+name: aps-final-backend
+services:
+  # ArunaCore - Message broker
+  arunacore:
+    image: lobometalurgico/arunacore:alpine
+    restart: unless-stopped
+    container_name: arunacore
+    environment:
+      - ARUNACORE_MASTERKEY=key
+      - ARUNACORE_REQUIRE_AUTH=false
+      - ARUNACORE_ID=arunacore-aps-final
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Gateway - API Gateway
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: gateway
+    environment:
+      - SERVER_PORT=2000
+      - SERVER_IP=0.0.0.0
+      - ARUNACORE_HOST=arunacore
+      - ARUNACORE_PORT=3000
+    ports:
+      - "3000:2000"
+    networks:
+      - backend
+    depends_on:
+      arunacore:
+        condition: service_healthy
+
+  # Geo Service
+  geo-service:
+    build:
+      context: ./geo-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: geo-service
+    environment:
+      - ARUNACORE_HOST=arunacore
+      - ARUNACORE_PORT=3000
+      - GEO_API_KEY=${GEO_API_KEY}
+      - BASE_GEO_API_URL=${BASE_GEO_API_URL}
+    networks:
+      - backend
+    depends_on:
+      arunacore:
+        condition: service_healthy
+
+  # Weather Service
+  weather-service:
+    build:
+      context: ./weather-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: weather-service
+    environment:
+      - ARUNACORE_HOST=arunacore
+      - ARUNACORE_PORT=3000
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - BASE_WEATHER_API_URL=${BASE_WEATHER_API_URL}
+    networks:
+      - backend
+    depends_on:
+      arunacore:
+        condition: service_healthy
+
+  # Weather Metrics Service
+  weather-metrics-service:
+    build:
+      context: ./weather-metrics-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: weather-metrics-service
+    environment:
+      - ARUNACORE_HOST=arunacore
+      - ARUNACORE_PORT=3000
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - BASE_WEATHER_API_URL=${BASE_WEATHER_API_URL}
+    networks:
+      - backend
+    depends_on:
+      arunacore:
+        condition: service_healthy
+
+networks:
+  backend:
+    driver: bridge

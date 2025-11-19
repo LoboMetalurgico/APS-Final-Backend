@@ -1,7 +1,7 @@
 name: aps-final-containers
 services:
   arunacore:
-    image: lobometalurgico/arunacore:latest-alpine
+    image: lobometalurgico/arunacore:alpine
     restart: unless-stopped
     environment:
       - ARUNACORE_MASTERKEY=key
